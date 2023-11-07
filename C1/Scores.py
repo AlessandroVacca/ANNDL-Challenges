@@ -27,4 +27,4 @@ def get_scores(y_test, y):
     print("Precision: ", p)
     print("Recall: ", r)
     print("F1: ", f1)
-    
+    return a, p, r, f1
