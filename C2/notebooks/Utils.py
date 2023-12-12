@@ -1,9 +1,9 @@
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 from math import sqrt
 import numpy as np
+import matplotlib.pyplot as plt
 
-
-def evaluate_model(test_labels, predictions):
+def evaluate_model(predictions, test_labels):
     # Calculate Mean Absolute Error
     mae = mean_absolute_error(test_labels, predictions)
 
@@ -13,14 +13,9 @@ def evaluate_model(test_labels, predictions):
     # Calculate Root Mean Squared Error
     rmse = sqrt(mse)
 
-    # Calculate Mean Absolute Percentage Error
-    epsilon = 1e-10  # small constant to avoid division by zero
-    mape = np.mean(np.abs((test_labels - predictions) / (test_labels + epsilon))) * 100
-
     print(f"MAE: {mae}")
     print(f"MSE: {mse}")
     print(f"RMSE: {rmse}")
-    print(f"MAPE: {mape}%")
 
 
 def split_dataset(dataset, labels, split_percentage=0.8):
@@ -75,3 +70,25 @@ def build_sequences_optimized(data, valid_periods, window=200, stride=20, telesc
     labels = labels[non_empty_indices]
     print("Dataset shape: ", dataset.shape)
     return dataset, labels
+
+
+def plot_predictions(predictions, test_labels, series_index):
+    # Select the series to plot
+    series_predictions = predictions[series_index]
+    series_test_labels = test_labels[series_index]
+
+    # Create the plot
+    plt.figure(figsize=(10, 6))
+    plt.plot(series_test_labels, label='Actual')
+    plt.plot(series_predictions, label='Predicted')
+
+    # Add title and labels
+    plt.title(f'Time Series {series_index} - Actual vs Predicted')
+    plt.xlabel('Time Step')
+    plt.ylabel('Value')
+
+    # Add legend
+    plt.legend()
+
+    # Show the plot
+    plt.show()
