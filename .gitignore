@@ -3,3 +3,5 @@
 .idea
 
 C2/data/
+*.npy
+*.db
