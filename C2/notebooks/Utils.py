@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 
 def evaluate_model(predictions, test_labels):
     # Calculate Mean Absolute Error
+    predictions = predictions.flatten()
+    test_labels = test_labels.flatten()
     mae = mean_absolute_error(test_labels, predictions)
 
     # Calculate Mean Squared Error
@@ -72,15 +74,18 @@ def build_sequences_optimized(data, valid_periods, window=200, stride=20, telesc
     return dataset, labels
 
 
-def plot_predictions(predictions, test_labels, series_index):
+def plot_predictions(test_data, predictions, test_labels, series_index):
     # Select the series to plot
+    n_test_data_to_plot = 2*predictions.shape[1]
+    series_test_data = test_data[series_index]
     series_predictions = predictions[series_index]
     series_test_labels = test_labels[series_index]
 
     # Create the plot
     plt.figure(figsize=(10, 6))
-    plt.plot(series_test_labels, label='Actual')
-    plt.plot(series_predictions, label='Predicted')
+    plt.plot(range(n_test_data_to_plot), series_test_data[-n_test_data_to_plot:], label='Data')
+    plt.plot(range(n_test_data_to_plot,n_test_data_to_plot + predictions.shape[1]), series_test_labels, label='Actual')
+    plt.plot(range(n_test_data_to_plot, n_test_data_to_plot + predictions.shape[1]), series_predictions, label='Predicted')
 
     # Add title and labels
     plt.title(f'Time Series {series_index} - Actual vs Predicted')
