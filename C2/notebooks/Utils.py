@@ -3,6 +3,8 @@ from math import sqrt
 import numpy as np
 import matplotlib.pyplot as plt
 
+from C2.notebooks.data_augmentation import augment_data
+
 
 def evaluate_model(predictions, test_labels):
     # Calculate Mean Absolute Error
@@ -36,38 +38,6 @@ def split_dataset(dataset, labels, split_percentage=0.8, augment_train_data=Fals
     print("Train data shape: ", train_data.shape)
     print("Test data shape: ", test_data.shape)
     return train_data, train_labels, test_data, test_labels
-
-
-def augment_data(train_data, train_labels, num_augmentations=3):
-    num_augmentations = 3
-    total_size = num_augmentations * num_augmentations * len(train_data)
-
-    # Preallocate numpy arrays
-    augmented_train_data = np.empty((total_size, *train_data.shape[1:]))
-    augmented_train_labels = np.empty((total_size, *train_labels.shape[1:]))
-
-    for n in range(num_augmentations):
-        print("Augmentation round: ", n)
-        for i in range(len(train_data)):
-            # Calculate the start index for this round and data point
-            start_idx = n * num_augmentations * len(train_data) + i * num_augmentations
-
-            # Add noise
-            noise = np.random.normal(0, 0.05, train_data[i].shape)
-            augmented_train_data[start_idx] = train_data[i] + noise
-            augmented_train_labels[start_idx] = train_labels[i]
-
-            # Add scaling
-            scaling = np.random.uniform(0.8, 1.2)
-            augmented_train_data[start_idx + 1] = train_data[i] * scaling
-            augmented_train_labels[start_idx + 1] = train_labels[i] * scaling
-
-            # Add constant value
-            constant = np.random.uniform(-0.1, 0.1)
-            augmented_train_data[start_idx + 2] = train_data[i] + constant
-            augmented_train_labels[start_idx + 2] = train_labels[i] + constant
-
-    return augmented_train_data, augmented_train_labels
 
 
 def build_sequences_optimized(data, valid_periods, window=200, stride=20, telescope=18):
