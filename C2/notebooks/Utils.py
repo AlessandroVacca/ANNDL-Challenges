@@ -3,6 +3,7 @@ from math import sqrt
 import numpy as np
 import matplotlib.pyplot as plt
 
+
 def evaluate_model(predictions, test_labels):
     # Calculate Mean Absolute Error
     predictions = predictions.flatten()
@@ -20,7 +21,7 @@ def evaluate_model(predictions, test_labels):
     print(f"RMSE: {rmse}")
 
 
-def split_dataset(dataset, labels, split_percentage=0.8):
+def split_dataset(dataset, labels, split_percentage=0.8, augment_train_data=False, num_augmentations=3):
     # Calculate the index at which to split the data
     split_index = int(len(dataset) * split_percentage)
 
@@ -28,9 +29,45 @@ def split_dataset(dataset, labels, split_percentage=0.8):
     train_data, test_data = dataset[:split_index], dataset[split_index:]
     train_labels, test_labels = labels[:split_index], labels[split_index:]
 
+    if augment_train_data:
+        print("Augmenting training data")
+        train_data, train_labels = augment_data(train_data, train_labels, num_augmentations=num_augmentations)
+
     print("Train data shape: ", train_data.shape)
     print("Test data shape: ", test_data.shape)
     return train_data, train_labels, test_data, test_labels
+
+
+def augment_data(train_data, train_labels, num_augmentations=3):
+    num_augmentations = 3
+    total_size = num_augmentations * num_augmentations * len(train_data)
+
+    # Preallocate numpy arrays
+    augmented_train_data = np.empty((total_size, *train_data.shape[1:]))
+    augmented_train_labels = np.empty((total_size, *train_labels.shape[1:]))
+
+    for n in range(num_augmentations):
+        print("Augmentation round: ", n)
+        for i in range(len(train_data)):
+            # Calculate the start index for this round and data point
+            start_idx = n * num_augmentations * len(train_data) + i * num_augmentations
+
+            # Add noise
+            noise = np.random.normal(0, 0.05, train_data[i].shape)
+            augmented_train_data[start_idx] = train_data[i] + noise
+            augmented_train_labels[start_idx] = train_labels[i]
+
+            # Add scaling
+            scaling = np.random.uniform(0.8, 1.2)
+            augmented_train_data[start_idx + 1] = train_data[i] * scaling
+            augmented_train_labels[start_idx + 1] = train_labels[i] * scaling
+
+            # Add constant value
+            constant = np.random.uniform(-0.1, 0.1)
+            augmented_train_data[start_idx + 2] = train_data[i] + constant
+            augmented_train_labels[start_idx + 2] = train_labels[i] + constant
+
+    return augmented_train_data, augmented_train_labels
 
 
 def build_sequences_optimized(data, valid_periods, window=200, stride=20, telescope=18):
@@ -76,7 +113,7 @@ def build_sequences_optimized(data, valid_periods, window=200, stride=20, telesc
 
 def plot_predictions(test_data, predictions, test_labels, series_index):
     # Select the series to plot
-    n_test_data_to_plot = 2*predictions.shape[1]
+    n_test_data_to_plot = 2 * predictions.shape[1]
     series_test_data = test_data[series_index]
     series_predictions = predictions[series_index]
     series_test_labels = test_labels[series_index]
@@ -84,8 +121,9 @@ def plot_predictions(test_data, predictions, test_labels, series_index):
     # Create the plot
     plt.figure(figsize=(10, 6))
     plt.plot(range(n_test_data_to_plot), series_test_data[-n_test_data_to_plot:], label='Data')
-    plt.plot(range(n_test_data_to_plot,n_test_data_to_plot + predictions.shape[1]), series_test_labels, label='Actual')
-    plt.plot(range(n_test_data_to_plot, n_test_data_to_plot + predictions.shape[1]), series_predictions, label='Predicted')
+    plt.plot(range(n_test_data_to_plot, n_test_data_to_plot + predictions.shape[1]), series_test_labels, label='Actual')
+    plt.plot(range(n_test_data_to_plot, n_test_data_to_plot + predictions.shape[1]), series_predictions,
+             label='Predicted')
 
     # Add title and labels
     plt.title(f'Time Series {series_index} - Actual vs Predicted')
