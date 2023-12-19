@@ -25,6 +25,10 @@ def add_seasonal_variation(data):
     return data + seasonal_component
 
 
+def flip(data):
+    return np.flip(data, axis=0)
+
+
 # Augmentation function using augmentation types
 # def augment_data(train_data, train_labels, num_augmentations=3):
 #     augmentation_functions = [add_noise, add_scaling, add_constant, add_seasonal_variation]
@@ -46,12 +50,13 @@ def add_seasonal_variation(data):
 #     return augmented_train_data, augmented_train_labels
 
 # Augmentation function using augmentation types
-def augment_data(train_data, train_labels, num_augmentation_types=3, num_augmentations=3):
-    augmentation_functions = [add_noise, add_scaling, add_constant, add_seasonal_variation]
+def augment_data(train_data, train_labels, categories=None,num_augmentation_types=3, num_augmentations=3):
+    augmentation_functions = [add_noise, add_scaling, add_constant, ]  # add_seasonal_variation
     total_augmentations = num_augmentations * num_augmentation_types
 
     augmented_train_data = np.empty((total_augmentations * len(train_data), *train_data.shape[1:]))
     augmented_train_labels = np.empty((total_augmentations * len(train_labels), *train_labels.shape[1:]))
+    augmented_train_categories = np.empty((total_augmentations * len(categories), *categories.shape[1:]))
 
     for n in range(num_augmentations):
         print("Augmentation round:", n)
@@ -67,14 +72,17 @@ def augment_data(train_data, train_labels, num_augmentation_types=3, num_augment
                 # Separate augmented_combined into data and labels
                 augmented_train_data[start_idx + idx] = augmented_combined[:train_data.shape[1]]
                 augmented_train_labels[start_idx + idx] = augmented_combined[train_data.shape[1]:]
+                if categories is not None:
+                    augmented_train_categories[start_idx + idx] = categories[i]
 
-    return augmented_train_data, augmented_train_labels
+    return augmented_train_data, augmented_train_labels, augmented_train_categories
 
 
 if __name__ == "__main__":
     # test augmentation functions
     import matplotlib.pyplot as plt
-    data = np.sin(np.arange(0, 100)/10)
+
+    data = np.sin(np.arange(0, 100) / 10)
     plt.plot(data)
     plt.plot(add_noise(data))
     plt.plot(add_scaling(data))
@@ -85,7 +93,7 @@ if __name__ == "__main__":
 
     # test augmentation function, data are sine waves
     n_datapoints = 48000
-    data = np.sin(np.arange(n_datapoints * 218).reshape((n_datapoints, 218))/10)
+    data = np.sin(np.arange(n_datapoints * 218).reshape((n_datapoints, 218)) / 10)
     train_data = data[:, :200]
     train_labels = data[:, 200:]
 
@@ -96,8 +104,7 @@ if __name__ == "__main__":
     plt.plot(train_data[0])
     # make the plots size bigger
     plt.plot(range(len(augmented_train_data[0])), augmented_train_data[0], linewidth=2)
-    plt.plot(range(len(augmented_train_data[0]), len(augmented_train_data[0]) + len(augmented_train_labels[0])), augmented_train_labels[0], linewidth=2)
+    plt.plot(range(len(augmented_train_data[0]), len(augmented_train_data[0]) + len(augmented_train_labels[0])),
+             augmented_train_labels[0], linewidth=2)
     plt.legend(["Original", "Augmented"])
     plt.show()
-
-
