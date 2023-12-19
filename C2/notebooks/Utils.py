@@ -23,21 +23,24 @@ def evaluate_model(predictions, test_labels):
     print(f"RMSE: {rmse}")
 
 
-def split_dataset(dataset, labels, split_percentage=0.8, augment_train_data=False, num_augmentations=3):
-    # Calculate the index at which to split the data
-    split_index = int(len(dataset) * split_percentage)
+def split_dataset(dataset, labels, categories = None, split_percentage=0.8, augment_train_data=False, num_augmentations=3):
+    # Split the dataset sklearn.model_selection.train_test_split
+    from sklearn.model_selection import train_test_split
+    train_categories = None
+    test_categories = None
+    if categories is not None:
+        train_data, test_data, train_labels, test_labels, train_categories, test_categories = train_test_split(dataset, labels, categories, shuffle=True, train_size=split_percentage)
 
-    # Split the dataset and labels into training and test sets
-    train_data, test_data = dataset[:split_index], dataset[split_index:]
-    train_labels, test_labels = labels[:split_index], labels[split_index:]
+    else:
+        train_data, test_data, train_labels, test_labels = train_test_split(dataset, labels, shuffle=True, train_size=split_percentage)
 
     if augment_train_data:
         print("Augmenting training data")
-        train_data, train_labels = augment_data(train_data, train_labels, num_augmentations=num_augmentations)
+        train_data, train_labels, train_categories = augment_data(train_data, train_labels, categories=train_categories, num_augmentations=num_augmentations)
 
     print("Train data shape: ", train_data.shape)
     print("Test data shape: ", test_data.shape)
-    return train_data, train_labels, test_data, test_labels
+    return train_data, train_labels, test_data, test_labels, train_categories, test_categories
 
 
 def build_sequences_optimized(data, valid_periods, window=200, stride=20, telescope=18):
@@ -83,7 +86,7 @@ def build_sequences_optimized(data, valid_periods, window=200, stride=20, telesc
 
 def plot_predictions(test_data, predictions, test_labels, series_index):
     # Select the series to plot
-    n_test_data_to_plot = 2 * predictions.shape[1]
+    n_test_data_to_plot = 4 * predictions.shape[1]
     series_test_data = test_data[series_index]
     series_predictions = predictions[series_index]
     series_test_labels = test_labels[series_index]
