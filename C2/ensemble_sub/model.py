@@ -10,7 +10,7 @@ class model:
         self.path = os.path.join(path, 'SubmissionModel/')
 
     def predict(self, X, categories):
-        
+
         # Note: this is just an example.
         # Here the model.predict is called
         enc = OneHotEncoder(handle_unknown='ignore')
@@ -23,29 +23,122 @@ class model:
             raise Exception("No models found in " + self.path)
 
         # ENSEMBLE MODEL average
-        predictions = np.zeros((len(X), 18))
-        predictions_all = np.zeros((len(X), 18, len(models)))
+        predictions_all = np.zeros((len(X), 18, len(models) * 4))
+
+        dataset = X
         for i, model_name in enumerate(models):
             model = tf.keras.models.load_model(self.path + model_name)
             if "cat" in model_name.lower():
-                preds = model.predict([X, categories])
-                predictions += preds / len(models)
+                preds = model.predict([dataset, categories], batch_size=512 * 2)
                 predictions_all[:, :, i] = preds
             elif "step9" in model_name.lower():
-                preds1 = model.predict(X)
-                expanded_dataset = np.concatenate((X, preds1), axis=1)
+                preds1 = model.predict(dataset, batch_size=512 * 2)
+                expanded_dataset = np.concatenate((dataset, preds1), axis=1)
                 expanded_dataset = expanded_dataset[:, -200:]
-                preds2 = model.predict(expanded_dataset)
+                preds2 = model.predict(expanded_dataset, batch_size=512 * 2)
                 preds = np.concatenate((preds1, preds2), axis=1)
 
-                predictions += preds / len(models)
                 predictions_all[:, :, i] = preds
             else:
-                preds = model.predict(X) / len(models)
-                predictions += preds / len(models)
+                preds = model.predict(dataset, batch_size=512 * 2)
                 predictions_all[:, :, i] = preds
 
+            predictions_all[:, :, i] = preds
 
-        out = predictions
+        # autoregressive
+        window = 3
+        prediction_len = 18
+        assert prediction_len % window == 0
+
+        for i, model_name in enumerate(models):
+            j = len(models) + i
+            model = tf.keras.models.load_model(self.path + model_name)
+            expanded_dataset = dataset
+            if "cat" in model_name.lower():
+                for _ in range(prediction_len // window):
+                    pre = model.predict([expanded_dataset, categories], batch_size=512 * 2)
+                    expanded_dataset = np.concatenate((expanded_dataset, pre), axis=1)
+                    expanded_dataset = expanded_dataset[:, :-prediction_len + window]
+                    expanded_dataset = expanded_dataset[:, -200:]
+                preds = expanded_dataset[:, -prediction_len:]
+                predictions_all[:, :, j] = preds
+            elif "step9" in model_name.lower():
+                for _ in range(prediction_len // window):
+                    pre = model.predict(expanded_dataset, batch_size=512 * 2)
+                    expanded_dataset = np.concatenate((expanded_dataset, pre), axis=1)
+                    expanded_dataset = expanded_dataset[:, :-9 + window]
+                    expanded_dataset = expanded_dataset[:, -200:]
+                preds = expanded_dataset[:, -prediction_len:]
+                predictions_all[:, :, j] = preds
+            else:
+                for _ in range(prediction_len // window):
+                    pre = model.predict(expanded_dataset, batch_size=512 * 2)
+                    expanded_dataset = np.concatenate((expanded_dataset, pre), axis=1)
+                    expanded_dataset = expanded_dataset[:, :-prediction_len + window]
+                    expanded_dataset = expanded_dataset[:, -200:]
+                preds = expanded_dataset[:, -prediction_len:]
+                predictions_all[:, :, j] = preds
+
+        window = 6
+
+        for i, model_name in enumerate(models):
+            j = len(models) * 2 + i
+            model = tf.keras.models.load_model(self.path + model_name)
+            expanded_dataset = dataset
+            if "cat" in model_name.lower():
+                for _ in range(prediction_len // window):
+                    pre = model.predict([expanded_dataset, categories], batch_size=512 * 2)
+                    expanded_dataset = np.concatenate((expanded_dataset, pre), axis=1)
+                    expanded_dataset = expanded_dataset[:, :-prediction_len + window]
+                    expanded_dataset = expanded_dataset[:, -200:]
+                preds = expanded_dataset[:, -prediction_len:]
+                predictions_all[:, :, j] = preds
+            elif "step9" in model_name.lower():
+                for _ in range(prediction_len // window):
+                    pre = model.predict(expanded_dataset, batch_size=512 * 2)
+                    expanded_dataset = np.concatenate((expanded_dataset, pre), axis=1)
+                    expanded_dataset = expanded_dataset[:, :-9 + window]
+                    expanded_dataset = expanded_dataset[:, -200:]
+                preds = expanded_dataset[:, -prediction_len:]
+                predictions_all[:, :, j] = preds
+            else:
+                for _ in range(prediction_len // window):
+                    pre = model.predict(expanded_dataset, batch_size=512 * 2)
+                    expanded_dataset = np.concatenate((expanded_dataset, pre), axis=1)
+                    expanded_dataset = expanded_dataset[:, :-prediction_len + window]
+                    expanded_dataset = expanded_dataset[:, -200:]
+                preds = expanded_dataset[:, -prediction_len:]
+                predictions_all[:, :, j] = preds
+
+        window = 9
+        for i, model_name in enumerate(models):
+            j = len(models) * 3 + i
+            model = tf.keras.models.load_model(self.path + model_name)
+            expanded_dataset = dataset
+            if "cat" in model_name.lower():
+                for _ in range(prediction_len // window):
+                    pre = model.predict([expanded_dataset, categories], batch_size=512 * 2)
+                    expanded_dataset = np.concatenate((expanded_dataset, pre), axis=1)
+                    expanded_dataset = expanded_dataset[:, :-prediction_len + window]
+                    expanded_dataset = expanded_dataset[:, -200:]
+                preds = expanded_dataset[:, -prediction_len:]
+                predictions_all[:, :, j] = preds
+            elif "step9" in model_name.lower():
+                for _ in range(prediction_len // window):
+                    pre = model.predict(expanded_dataset, batch_size=512 * 2)
+                    expanded_dataset = np.concatenate((expanded_dataset, pre), axis=1)
+                    expanded_dataset = expanded_dataset[:, -200:]
+                preds = expanded_dataset[:, -prediction_len:]
+                predictions_all[:, :, j] = preds
+            else:
+                for _ in range(prediction_len // window):
+                    pre = model.predict(expanded_dataset, batch_size=512 * 2)
+                    expanded_dataset = np.concatenate((expanded_dataset, pre), axis=1)
+                    expanded_dataset = expanded_dataset[:, :-prediction_len + window]
+                    expanded_dataset = expanded_dataset[:, -200:]
+                preds = expanded_dataset[:, -prediction_len:]
+                predictions_all[:, :, j] = preds
+
+        out = np.mean(predictions_all, axis=2)
 
         return out
